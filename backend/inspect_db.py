@@ -2,7 +2,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 
 # 1. 載入跟之前一樣的 Embedding 模型
-embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+embeddings = HuggingFaceEmbeddings(model_name="paraphrase-multilingual-MiniLM-L12-v2")
 
 # 2. 讀取您已經產生的向量庫
 # 注意：路徑請根據您執行指令的位置調整，如果在 backend 下就用 "vector_store"
