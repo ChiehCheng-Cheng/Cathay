@@ -22,6 +22,7 @@ vector_db = FAISS.load_local("vector_store", embeddings, allow_dangerous_deseria
 # 2. 核心路由與問答邏輯 (Agentic Routing)
 # ==========================================
 def ask_insurance_question(user_input, qa_top_n=5, km_top_n=5):
+    PDF_URL = "https://gcp.cathay-ins.com.tw/CXIDocs/PF/doc/assets/bobe/travel/overseas_travel.pdf"
     print(f"\n💬 收到使用者提問: {user_input}")
     
     # 💡 新增：定義全域 System Prompt，設定最高指導原則與人設
@@ -147,11 +148,16 @@ def ask_insurance_question(user_input, qa_top_n=5, km_top_n=5):
             ("human", km_generation_prompt)
     ]).content.strip()
 
+    # 💡 修改：在答案底下增加「資料來源」區塊
+    # 使用 Markdown 語法讓前端顯示更美觀
+    footer = f"\n\n---\n**資料來源：** [國泰產物享樂遊海外旅行綜合保險官方條款]({PDF_URL})"
+    final_answer = km_answer + footer
+
     # 擷取來源 (簡單抓取第一個文件作為參考，若需更複雜來源追蹤可再擴充)
     km_source = km_docs[0].metadata.get("clause_id", "多項條款彙整") if km_docs else "系統生成"
 
     return {
-        "answer": km_answer,
+        "answer": final_answer,
         "source": km_source,
         "type": "KM_GENERATIVE"
     }

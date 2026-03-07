@@ -1,7 +1,26 @@
 <script setup lang="ts">
 import { ref, nextTick } from 'vue';
-import { sendMessageToAPI } from './api/chatApi'; // 更新了引用檔名
-import type { Message } from './types/chatTypes'; // 更新了引用檔名
+import MarkdownIt from 'markdown-it'; // 💡 新增：引入 Markdown 解析器
+import { sendMessageToAPI } from './api/chatApi'; 
+import type { Message } from './types/chatTypes'; 
+
+// 💡 新增：初始化與設定 Markdown 解析器
+const md = new MarkdownIt({
+  linkify: true, // 自動識別純文字網址並轉為連結
+  breaks: true   // 支援換行符號
+});
+
+// 設定讓連結都在新分頁開啟 (target="_blank") 的外掛
+const defaultRender = md.renderer.rules.link_open || function(tokens, idx, options, env, self) {
+  return self.renderToken(tokens, idx, options);
+};
+
+md.renderer.rules.link_open = function(tokens, idx, options, env, self) {
+  tokens[idx].attrPush(['target', '_blank']); // 新分頁開啟
+  tokens[idx].attrPush(['rel', 'noopener noreferrer']); // 安全性設定
+  return defaultRender(tokens, idx, options, env, self);
+};
+// ----------------------------------------------------
 
 const userInput = ref('');
 const isLoading = ref(false);
@@ -37,7 +56,7 @@ const handleSend = async () => {
       id: Date.now(),
       role: 'assistant',
       content: response.answer,
-      type: response.type, // ✨ 新增：將後端回傳的 type 存入訊息陣列中
+      type: response.type, 
     });
   } catch (error: any) {
     messages.value.push({
@@ -53,10 +72,10 @@ const handleSend = async () => {
 </script>
 
 <template>
-  <div class="flex flex-col h-screen max-w-3xl mx-auto border-x border-gray-200 font-sans">
+  <div class="flex flex-col h-screen w-full font-sans bg-white">
     
     <header class="bg-[#00a850] text-white p-4 text-center shadow-md z-10">
-      <h1 class="text-xl font-bold">國泰產險 RAG 智能助手</h1>
+      <h1 class="text-xl font-bold">國泰產險智能助理阿發</h1>
     </header>
 
     <main class="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4" ref="chatContainer">
@@ -66,18 +85,16 @@ const handleSend = async () => {
         class="flex items-start gap-3"
         :class="msg.role === 'user' ? 'flex-row-reverse' : ''"
       >
-        <div 
-          class="flex items-center justify-center w-10 h-10 rounded-full font-bold shrink-0"
-          :class="msg.role === 'user' ? 'bg-[#00a850] text-white' : 'bg-gray-300 text-gray-700'"
-        >
-          {{ msg.role === 'user' ? '您' : 'AI' }}
+        <div v-if="msg.role === 'user'" class="flex items-center justify-center w-10 h-10 rounded-full bg-[#00a850] text-white font-bold shrink-0">
+          您
         </div>
+        <img v-else src="/smart_alpha_survey.png" alt="AI" class="w-10 h-10 rounded-full object-cover shrink-0 border border-gray-200 shadow-sm" />
         
         <div 
-          class="p-3 rounded-lg max-w-[70%] shadow-sm whitespace-pre-wrap leading-relaxed relative"
+          class="p-3 rounded-lg max-w-[70%] shadow-sm leading-relaxed relative markdown-body"
           :class="msg.role === 'user' ? 'bg-[#e6f7ed] text-gray-800' : 'bg-white text-gray-800'"
         >
-          <div>{{ msg.content }}</div>
+          <div v-html="md.render(msg.content)"></div>
 
           <div 
             v-if="msg.type === 'KM_GENERATIVE'" 
@@ -89,7 +106,7 @@ const handleSend = async () => {
       </div>
       
       <div v-if="isLoading" class="flex items-start gap-3">
-        <div class="flex items-center justify-center w-10 h-10 rounded-full bg-gray-300 text-gray-700 font-bold shrink-0">AI</div>
+        <img src="/smart_alpha_survey.png" alt="AI" class="w-10 h-10 rounded-full object-cover shrink-0 border border-gray-200 shadow-sm animate-pulse" />
         <div class="p-3 rounded-lg bg-white shadow-sm text-gray-500 italic">
           檢索條款與思考中...
         </div>
@@ -115,3 +132,24 @@ const handleSend = async () => {
     </footer>
   </div>
 </template>
+
+<style scoped>
+:deep(.markdown-body a) {
+  color: #0070cc;
+  text-decoration: underline;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+:deep(.markdown-body a:hover) {
+  color: #0056b3;
+}
+
+:deep(.markdown-body p) {
+  margin-bottom: 0.5rem;
+}
+
+:deep(.markdown-body p:last-child) {
+  margin-bottom: 0;
+}
+</style>
