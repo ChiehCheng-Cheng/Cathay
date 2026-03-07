@@ -28,21 +28,20 @@ def process_insurance_pdf(file_path):
     # 將多個空行縮減為一個，讓標題與內容靠得更近，避免 AI 覺得內容不完整
     full_text = re.sub(r"\n+", "\n", full_text)
 
-    # 2. 使用 Regex 根據「第 XX 條」分割文本
-    pattern = r"(\n第[一二三四五六七八九十百]+條\s+)"
+    # 2. 使用 Regex 根據「第 XX 條+條款名稱」分割文本
+    pattern = r"(\n第[一二三四五六七八九十百]+條[^\n]+)"
     parts = re.split(pattern, full_text)
-    
+
     documents = []
-    # split 後的第一個元素通常是標題前的雜質，跳過
     for i in range(1, len(parts), 2):
-        clause_id = parts[i]      # 例如：第三十條
+        # 此時 parts[i] 會拿到 "第三十二條 班機延誤保險理賠文件"
+        clause_full_title = parts[i].strip() 
         clause_content = parts[i+1] if i+1 < len(parts) else ""
         
-        # 建立帶有 Metadata 的 Document
         doc = Document(
-            page_content=f"{clause_id} {clause_content.strip()}",
+            page_content=f"{clause_full_title}\n{clause_content.strip()}",
             metadata={
-                "clause_id": clause_id,
+                "clause_id": clause_full_title, # 現在這裡有完整名稱了！
                 "source": os.path.basename(file_path)
             }
         )
