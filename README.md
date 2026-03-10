@@ -48,31 +48,29 @@ Vector DB: FAISS (IndexFlatL2)。
 ---
 
 ## 📂 程式碼目錄結構 (Code Structure)
-
 CATHAY/
 ├── backend/                # 後端核心：RAG 邏輯與 API 實作
 │   ├── faq_ingestion.py    # FAQ 資料處理與向量化腳本
-│   ├── pdf_to_excel.py     # PDF條款資料清洗與預處理工具
+│   ├── pdf_to_excel.py     # PDF 條款資料清洗與預處理工具
 │   ├── inspect_db.py       # 向量資料庫檢查與驗證工具
 │   ├── rag_chains.py       # 核心邏輯：QA 檢索、KM 檢索與 LLM 決策
-│   └── main.py             # 後端 API 服務入口 (FastAPI/Flask)
-│   
-
+│   ├── main.py             # 後端 API 服務入口 (FastAPI/Flask)
+│   └── utils.py            # 通用工具函式
+│
 ├── frontend/               # 前端介面：基於 Vue 3 + Vite 的對話系統
-│   ├── src/                # 前端原始碼 
+│   ├── src/                # 前端原始碼
 │   ├── public/             # 靜態資源檔案
 │   ├── index.html          # SPA 入口頁面
-│   ├── package.json        # 前端相依套件與腳本定義
+│   ├── package.json        # 前端相依套件定義
 │   ├── vite.config.js      # Vite 建構配置
 │   └── tailwind.config.js  # Tailwind CSS 樣式配置
-│   
 │
 ├── data/                   # 原始資料層
-│   └── 海外旅行不便險條款.pdf # 專案核心資料源 
+│   └── 海外旅行不便險條款.pdf # 專案核心資料源
 │
 ├── vector_store/           # 持久化向量資料庫 (FAISS Index)
 │   ├── index.faiss         # 向量檢索索引檔案
 │   └── index.pkl           # 結構化 Metadata 儲存檔案
 │
-├── .gitignore              # 排除敏感檔案與環境變數 
-└── README.md               # 專案總體說明文件 
+├── .gitignore              # 排除敏感檔案與環境變數
+└── README.md               # 專案總體說明文件
