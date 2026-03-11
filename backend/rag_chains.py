@@ -106,7 +106,7 @@ def ask_insurance_question(user_input, qa_top_n=5, km_top_n=5):
             }
 
     # 【第五步：若 QA 未命中，進入 KM 知識庫 (篩選與生成模式)】
-    print("🤖 判定結果：QA 未命中，進入 KM 知識庫進行 Top N 篩選與潤飾生成...")
+    print(" 判定結果：QA 未命中，進入 KM 知識庫進行 Top N 篩選與潤飾生成...")
     
     # 手動從 KM 庫抓取 Top N
     km_docs = vector_db.similarity_search(user_input, k=km_top_n)

@@ -6,11 +6,11 @@ from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 
 def process_insurance_pdf(file_path):
-    print(f"⏳ 開始讀取 PDF 檔案: {file_path}")
+    print(f" 開始讀取 PDF 檔案: {file_path}")
     
     # 【新增防呆機制】：先檢查 PDF 檔案到底在不在
     if not os.path.exists(file_path):
-        print(f"❌ 嚴重錯誤：找不到檔案！請確認 {file_path} 路徑是否正確。")
+        print(f" 嚴重錯誤：找不到檔案！請確認 {file_path} 路徑是否正確。")
         return
         
     # 1. 載入 PDF
@@ -47,20 +47,20 @@ def process_insurance_pdf(file_path):
         )
         documents.append(doc)
 
-    print(f"✅ 成功切分出 {len(documents)} 條保險條款！")
-    print("⏳ 開始下載並載入多語系 Embedding 模型 (只需下載一次)...")
+    print(f" 成功切分出 {len(documents)} 條保險條款！")
+    print(" 開始下載並載入多語系 Embedding 模型 (只需下載一次)...")
 
     # 3. 初始化 Embedding 模型
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 
-    print("⏳ 模型載入完成！正在將文字轉換為向量並存入 FAISS 資料庫...")
+    print(" 模型載入完成！正在將文字轉換為向量並存入 FAISS 資料庫...")
 
     # 4. 存入 FAISS 並持久化
     os.makedirs("vector_store", exist_ok=True)  # 確保資料夾一定存在
     vector_db = FAISS.from_documents(documents, embeddings)
     vector_db.save_local("vector_store")
     
-    print(f"🎉 成功處理完畢！共計 {len(documents)} 條條款已存入 vector_store 資料夾。")
+    print(f" 成功處理完畢！共計 {len(documents)} 條條款已存入 vector_store 資料夾。")
 
 if __name__ == "__main__":
     # 確保路徑是相對 backend 目錄往外找 data

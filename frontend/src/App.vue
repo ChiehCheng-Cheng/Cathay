@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { ref, nextTick } from 'vue';
-import MarkdownIt from 'markdown-it'; // 💡 新增：引入 Markdown 解析器
+import MarkdownIt from 'markdown-it'; //  新增：引入 Markdown 解析器
 import { sendMessageToAPI } from './api/chatApi'; 
 import type { Message } from './types/chatTypes'; 
 
-// 💡 新增：初始化與設定 Markdown 解析器
+//  新增：初始化與設定 Markdown 解析器
 const md = new MarkdownIt({
   linkify: true, // 自動識別純文字網址並轉為連結
   breaks: true   // 支援換行符號
 });
 
-// 設定讓連結都在新分頁開啟 (target="_blank") 的外掛
+// 設定讓連結都在新分頁開啟 (target="_blank") 
 const defaultRender = md.renderer.rules.link_open || function(tokens, idx, options, env, self) {
   return self.renderToken(tokens, idx, options);
 };
