@@ -4,7 +4,7 @@ import pandas as pd
 from langchain_community.document_loaders import PyMuPDFLoader
 
 def extract_clauses_to_excel(pdf_path, output_excel):
-    print(f"⏳ 正在讀取並解析 PDF: {pdf_path}...")
+    print(f" 正在讀取並解析 PDF: {pdf_path}...")
     
     # 1. 載入並初步清洗文字
     loader = PyMuPDFLoader(pdf_path)
@@ -43,7 +43,7 @@ def extract_clauses_to_excel(pdf_path, output_excel):
     df = pd.DataFrame(data)
     df.to_excel(output_excel, index=False)
     
-    print(f"🎉 成功提取 {len(df)} 筆條文至 {output_excel}！")
+    print(f" 成功提取 {len(df)} 筆條文至 {output_excel}！")
 
 if __name__ == "__main__":
     pdf_file = "../data/海外旅行不便險條款.pdf"

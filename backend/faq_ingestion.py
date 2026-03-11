@@ -5,7 +5,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 
 def ingest_faq_excel(file_path):
-    print(f"⏳ 正在讀取 QA Excel: {file_path}")
+    print(f" 正在讀取 QA Excel: {file_path}")
     df = pd.read_excel(file_path)
     
     documents = []
@@ -30,7 +30,7 @@ def ingest_faq_excel(file_path):
     
     vector_db = FAISS.from_documents(documents, embeddings)
     vector_db.save_local("faq_vector_store")
-    print(f"🎉 QA 向量庫已建立，共計 {len(documents)} 筆。")
+    print(f" QA 向量庫已建立，共計 {len(documents)} 筆。")
 
 if __name__ == "__main__":
     ingest_faq_excel("faq_data.xlsx")

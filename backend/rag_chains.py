@@ -23,9 +23,9 @@ vector_db = FAISS.load_local("vector_store", embeddings, allow_dangerous_deseria
 # ==========================================
 def ask_insurance_question(user_input, qa_top_n=5, km_top_n=5):
     PDF_URL = "https://gcp.cathay-ins.com.tw/CXIDocs/PF/doc/assets/bobe/travel/overseas_travel.pdf"
-    print(f"\n💬 收到使用者提問: {user_input}")
+    print(f"\n 收到使用者提問: {user_input}")
     
-    # 💡 新增：定義全域 System Prompt，設定最高指導原則與人設
+    #  新增： System Prompt
     system_prompt = (
         "## # Role\n"
         "您是「海外旅行不便保險專業顧問」。您的唯一任務是根據提供的保險條款，精確地為「您（使用者）」解答關於旅程取消、延誤、更改及各項補償保險的理賠諮詢。\n\n"
@@ -66,7 +66,7 @@ def ask_insurance_question(user_input, qa_top_n=5, km_top_n=5):
         c_text = doc.metadata.get('original_text', '')
         candidates_text += f"[候選 {i+1}]\n條款編號：{c_id}\n條文內容：{c_text}\n\n"
 
-    # 【第二步：LLM 裁判 Prompt (QA 路由層)】
+    # 【第二步：LLM 裁判 Prompt (QA 層)】
     routing_prompt = f"""
     您是一位嚴格的保險理賠審核員。
     請閱讀以下「使用者問題」，以及系統檢索出的 {qa_top_n} 筆「候選條款」。
@@ -87,7 +87,7 @@ def ask_insurance_question(user_input, qa_top_n=5, km_top_n=5):
             ("system", system_prompt),
             ("human", routing_prompt)
     ]).content.strip().upper()
-    print(f"🧠 QA 路由判定原始輸出: {decision}")
+    print(f" QA 路由判定原始輸出: {decision}")
 
     # 【第四步：解析 LLM 決策並分流】
     match = re.search(r'\d+', decision)
@@ -96,9 +96,9 @@ def ask_insurance_question(user_input, qa_top_n=5, km_top_n=5):
         index = int(match.group()) - 1
         if 0 <= index < len(faq_docs):
             selected_doc = faq_docs[index]
-            print(f"🎯 判定結果：命中 QA 知識庫！(選中候選 {index + 1})")
+            print(f" 判定結果：命中 QA 知識庫！(選中候選 {index + 1})")
             
-            # 💡 修改點 2：這裡維持您的好設計，僅輸出 original_text，確保不會有 ID 和 Title 混入答案中
+            #僅輸出 original_text，確保不會有 ID 和 Title 混入答案中
             return {
                 "answer": selected_doc.metadata.get("original_text", "無原文資料"),
                 "source": selected_doc.metadata.get("clause_id", "單一條款"),
@@ -108,14 +108,14 @@ def ask_insurance_question(user_input, qa_top_n=5, km_top_n=5):
     # 【第五步：若 QA 未命中，進入 KM 知識庫 (篩選與生成模式)】
     print("🤖 判定結果：QA 未命中，進入 KM 知識庫進行 Top N 篩選與潤飾生成...")
     
-    # 💡 修改點 3：手動從 KM 庫抓取 Top N
+    # 手動從 KM 庫抓取 Top N
     km_docs = vector_db.similarity_search(user_input, k=km_top_n)
     
     km_candidates_text = ""
     for i, doc in enumerate(km_docs):
         km_candidates_text += f"[參考條款 {i+1}]\n{doc.page_content}\n\n"
 
-    # 💡 修改點 4：重新設計 KM Prompt，明確要求 LLM 先「選/評估」，再「潤飾生成」
+    #設計 KM Prompt，要求 LLM 先「選/評估」，再「潤飾生成」
     km_generation_prompt = f"""
     您是一位專業的保險理賠顧問。
     請閱讀以下「使用者問題」，以及系統從知識庫檢索出的 Top {km_top_n} 筆「參考條款」。
@@ -148,7 +148,7 @@ def ask_insurance_question(user_input, qa_top_n=5, km_top_n=5):
             ("human", km_generation_prompt)
     ]).content.strip()
 
-    # 💡 修改：在答案底下增加「資料來源」區塊
+    # 在答案底下增加「資料來源」區塊
     # 使用 Markdown 語法讓前端顯示更美觀
     footer = f"\n\n---\n**資料來源：** [國泰產物享樂遊海外旅行綜合保險官方條款]({PDF_URL})"
     final_answer = km_answer + footer

@@ -29,7 +29,7 @@ app.add_middleware(
 class ChatRequest(BaseModel):
     message: str
 
-# 4. ✨修改點：定義 API 回應模型 (新增 type 與 source)✨
+# 4.定義 API 回應模型 (新增 type 與 source)
 class ChatResponse(BaseModel):
     answer: str
     status: str = "success"
@@ -52,7 +52,7 @@ async def chat_endpoint(request: ChatRequest):
         # 呼叫 rag_chains.py 中的問答函式
         raw_result = ask_insurance_question(user_input)
         
-        # ✨修改點：從 LangChain 回傳的字典中萃取出答案、類型與來源✨
+        # 從 LangChain 回傳的字典中萃取出答案、類型與來源
         if isinstance(raw_result, dict) and "answer" in raw_result:
             final_answer = raw_result["answer"]
             res_type = raw_result.get("type", "")     # 取得 QA_EXACT 或 KM_GENERATIVE
