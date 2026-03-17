@@ -18,3 +18,12 @@ export interface Message {
   content: string;
   type?: string;   //  新增：用來判斷是否在畫面上顯示「紅字標註」
 }
+
+// chatTypes.ts 範例
+export interface Message {
+  id: number;
+  role: 'user' | 'assistant';
+  content: string;
+  type?: string;
+  options?: string[]; 
+}

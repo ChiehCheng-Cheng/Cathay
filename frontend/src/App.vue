@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, nextTick } from 'vue';
-import MarkdownIt from 'markdown-it'; //  新增：引入 Markdown 解析器
+import MarkdownIt from 'markdown-it';
 import { sendMessageToAPI } from './api/chatApi'; 
 import type { Message } from './types/chatTypes'; 
 
-//  新增：初始化與設定 Markdown 解析器
+// 初始化與設定 Markdown 解析器
 const md = new MarkdownIt({
   linkify: true, // 自動識別純文字網址並轉為連結
   breaks: true   // 支援換行符號
@@ -41,12 +41,9 @@ const scrollToBottom = async () => {
   }
 };
 
-const handleSend = async () => {
-  const text = userInput.value.trim();
-  if (!text) return;
-
+// 🌟 新增：將發送訊息的核心邏輯獨立出來，讓輸入框跟快捷按鈕可以共用
+const processMessage = async (text: string) => {
   messages.value.push({ id: Date.now(), role: 'user', content: text });
-  userInput.value = '';
   isLoading.value = true;
   scrollToBottom();
 
@@ -57,6 +54,7 @@ const handleSend = async () => {
       role: 'assistant',
       content: response.answer,
       type: response.type, 
+      options: response.options, // 🌟 新增：接收後端傳來的選項陣列
     });
   } catch (error: any) {
     messages.value.push({
@@ -69,6 +67,19 @@ const handleSend = async () => {
     scrollToBottom();
   }
 };
+
+const handleSend = () => {
+  const text = userInput.value.trim();
+  if (!text) return;
+  userInput.value = ''; // 清空輸入框
+  processMessage(text);
+};
+
+// 🌟 新增：處理快捷按鈕點擊事件
+const handleOptionClick = (optionText: string) => {
+  if (isLoading.value) return; // 避免重複連點
+  processMessage(optionText);
+};
 </script>
 
 <template>
@@ -80,7 +91,7 @@ const handleSend = async () => {
 
     <main class="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-4" ref="chatContainer">
       <div 
-        v-for="msg in messages" 
+        v-for="(msg, index) in messages" 
         :key="msg.id" 
         class="flex items-start gap-3"
         :class="msg.role === 'user' ? 'flex-row-reverse' : ''"
@@ -90,17 +101,34 @@ const handleSend = async () => {
         </div>
         <img v-else src="/smart_alpha_survey.png" alt="AI" class="w-10 h-10 rounded-full object-cover shrink-0 border border-gray-200 shadow-sm" />
         
-        <div 
-          class="p-3 rounded-lg max-w-[70%] shadow-sm leading-relaxed relative markdown-body"
-          :class="msg.role === 'user' ? 'bg-[#e6f7ed] text-gray-800' : 'bg-white text-gray-800'"
-        >
-          <div v-html="md.render(msg.content)"></div>
+        <div class="flex flex-col gap-2 max-w-[70%]">
+          <div 
+            class="p-3 rounded-lg shadow-sm leading-relaxed relative markdown-body w-full"
+            :class="msg.role === 'user' ? 'bg-[#e6f7ed] text-gray-800' : 'bg-white text-gray-800'"
+          >
+            <div v-html="md.render(msg.content)"></div>
+
+            <div 
+              v-if="msg.type === 'KM_GENERATIVE'" 
+              style="color: red; font-size: 0.8em; margin-top: 8px; border-top: 1px solid #fee2e2; padding-top: 4px;"
+            >
+              ⚠ 答案由GPT生成
+            </div>
+          </div>
 
           <div 
-            v-if="msg.type === 'KM_GENERATIVE'" 
-            style="color: red; font-size: 0.8em; margin-top: 8px; border-top: 1px solid #fee2e2; padding-top: 4px;"
+            v-if="msg.type === 'FOLLOW_UP_QUESTION' && msg.options && msg.options.length > 0"
+            class="flex flex-col gap-2 mt-1"
           >
-            ⚠ 答案由GPT生成
+            <button
+              v-for="(option, optIdx) in msg.options"
+              :key="optIdx"
+              @click="handleOptionClick(option)"
+              :disabled="isLoading"
+              class="text-left px-4 py-2 text-sm bg-white border-2 border-[#00a850] text-[#00a850] rounded-lg hover:bg-[#e6f7ed] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ option }}
+            </button>
           </div>
         </div>
       </div>

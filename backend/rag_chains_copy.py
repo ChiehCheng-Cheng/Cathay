@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 from langchain_groq import ChatGroq
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from sentence_transformers import CrossEncoder
 
 # 載入環境變數
 load_dotenv()
@@ -18,33 +17,6 @@ embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-
 faq_db = FAISS.load_local("faq_vector_store", embeddings, allow_dangerous_deserialization=True)
 vector_db = FAISS.load_local("vector_store", embeddings, allow_dangerous_deserialization=True)
 
-print(" 正在載入 Rerank 模型...")
-rerank_model = CrossEncoder('BAAI/bge-reranker-v2-m3', max_length=512)
-# ==========================================
-# Rerank 核心函式
-# ==========================================
-def get_reranked_docs(query, retrieved_docs, top_n=5):
-    """
-    將 FAISS 檢索出的粗篩結果，透過 Cross-Encoder 進行精準重排序
-    """
-    if not retrieved_docs:
-        return []
-    
-    # 準備 Cross-Encoder 需要的輸入對 [Query, Document]
-    # 這裡兼容 QA庫(original_text) 與 KM庫(page_content)
-    pairs = []
-    for doc in retrieved_docs:
-        text = doc.metadata.get('original_text', doc.page_content)
-        pairs.append([query, text])
-    
-    # 計算精準相關性分數
-    scores = rerank_model.predict(pairs)
-    
-    # 將原始文件與分數綁定並降序排列
-    ranked_results = sorted(zip(retrieved_docs, scores), key=lambda x: x[1], reverse=True)
-    
-    # 只取重排序後的前 N 名
-    return [doc for doc, score in ranked_results[:top_n]]
 
 # ==========================================
 # 2. 核心路由與問答邏輯 (Agentic Routing)
@@ -140,9 +112,7 @@ def ask_insurance_question(user_input, qa_top_n=5, km_top_n=5):
         print("[追問機制] 啟動：意圖不明確，進入 QA 庫檢索 Top N...")
         
         # 1. 透過 QA 庫找出 Top N 候選
-        initial_clarify_docs = faq_db.similarity_search(user_input, k=15)
-        clarify_docs = get_reranked_docs(user_input, initial_clarify_docs, top_n=qa_top_n)
-
+        clarify_docs = faq_db.similarity_search(user_input, k=qa_top_n)
         clarify_text = ""
         for i, doc in enumerate(clarify_docs):
             c_text = doc.metadata.get('original_text', doc.page_content)
@@ -197,9 +167,8 @@ def ask_insurance_question(user_input, qa_top_n=5, km_top_n=5):
 
 
         # 【第一步：從 QA 知識庫抓取 Top N 候選】
-        initial_faq_docs = faq_db.similarity_search(user_input, k=15)
-        faq_docs = get_reranked_docs(user_input, initial_faq_docs, top_n=qa_top_n)
-
+        faq_docs = faq_db.similarity_search(user_input, k=qa_top_n)
+        
         candidates_text = ""
         for i, doc in enumerate(faq_docs):
             # 這裡提取給 LLM 裁判看的資料
@@ -250,9 +219,8 @@ def ask_insurance_question(user_input, qa_top_n=5, km_top_n=5):
         print(" 判定結果：QA 未命中，進入 KM 知識庫進行 Top N 篩選與潤飾生成...")
         
         # 手動從 KM 庫抓取 Top N
-        initial_km_docs = vector_db.similarity_search(user_input, k=15)
-        km_docs = get_reranked_docs(user_input, initial_km_docs, top_n=km_top_n)
-
+        km_docs = vector_db.similarity_search(user_input, k=km_top_n)
+        
         km_candidates_text = ""
         for i, doc in enumerate(km_docs):
             km_candidates_text += f"[參考條款 {i+1}]\n{doc.page_content}\n\n"

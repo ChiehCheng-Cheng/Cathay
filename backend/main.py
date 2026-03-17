@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List  # 新增：引入 List 型別
 from rag_chains import ask_insurance_question  # 引入您剛才調校好的核心邏輯
 
 # 1. 初始化 FastAPI 應用程式
@@ -35,6 +35,7 @@ class ChatResponse(BaseModel):
     status: str = "success"
     type: Optional[str] = None   # 用來判斷是否為 KM_GENERATIVE
     source: Optional[str] = None # 用來傳遞參考的條款編號
+    options: Optional[List[str]] = None # 新增：用來傳遞前端快捷按鈕的選項陣列
 
 # 5. 建立 /api/chat 接口
 @app.post("/api/chat", response_model=ChatResponse)
@@ -57,16 +58,19 @@ async def chat_endpoint(request: ChatRequest):
             final_answer = raw_result["answer"]
             res_type = raw_result.get("type", "")     # 取得 QA_EXACT 或 KM_GENERATIVE
             res_source = raw_result.get("source", "") # 取得來源條款
+            res_options = raw_result.get("options", None) # 新增：萃取 options 陣列
         else:
             final_answer = str(raw_result)
             res_type = ""
             res_source = ""
+            res_options = None # 新增：若無選項則設為 None
         
         # 將所有資訊打包回傳給前端
         return ChatResponse(
             answer=final_answer, 
             type=res_type, 
-            source=res_source
+            source=res_source,
+            options=res_options # 新增：將 options 放入回傳模型中
         )
 
     except Exception as e:
